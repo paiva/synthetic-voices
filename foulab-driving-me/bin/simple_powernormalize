@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+#####################################################-*-mode:shell-script-*-
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -31,39 +32,43 @@
 ##                                                                       ##
 ###########################################################################
 ##                                                                       ##
-##    User defined configuration options                                 ##
+##  Simple power normalization for files, maximize power and then fix it ##
+##  to 0.65 of the maximum (feel freeto change that number if you want)  ##
 ##                                                                       ##
 ###########################################################################
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
+if [ ! "$ESTDIR" ]
+then
+   echo "environment variable ESTDIR is unset"
+   echo "set it to your local speech tools directory e.g."
+   echo '   bash$ export ESTDIR=/home/awb/projects/speech_tools/'
+   echo or
+   echo '   csh% setenv ESTDIR /home/awb/projects/speech_tools/'
+   exit 1
+fi
 
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
+if [ $# = 0 ]
+then
+   echo "Normalize power in waveforms"
+   echo "Usage:  bin/simple_powernormalize wav.orig/*.wav"
+   echo "Will overwrite existing waveforms in wavn/"
+   echo "You need to copy/mv or whatever the files into wav/"
+   echo "Make sure YOU don't overwrite the originals wav/"
+   exit 1
+fi
 
-FESTDIR=$(ESTDIR)/../festival
+if [ ! -d wavn ]
+then
+   mkdir wavn
+fi
 
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
-
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
-
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
-
-
+for i in $*
+do
+  fname=`basename $i .wav`
+  echo $fname
+  $ESTDIR/bin/ch_wave -scaleN 0.65 -o wavn/$fname.wav $i
+done
 
 

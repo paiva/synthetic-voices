@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+#####################################################-*-mode:shell-script-*-
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -30,40 +31,42 @@
 ##  THIS SOFTWARE.                                                       ##
 ##                                                                       ##
 ###########################################################################
-##                                                                       ##
-##    User defined configuration options                                 ##
-##                                                                       ##
-###########################################################################
+###                                                                       ##
+###  Generate (filled) pitchmark file from EGG/LAR files                  ##
+###                                                                       ##
+############################################################################
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
+if [ $# = 0 ]
+then
+   echo "Extract pitchmarks from EGG signals"
+   echo "Usage:  bin/make_pm lar/*.lar"
+   echo "Will create pm/*.pm"
+   echo "pitchmark parameters are set for male speaker, edit for female."
+   exit 1
+fi
 
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
+if [ ! "$ESTDIR" ]
+then
+   echo "environment variable ESTDIR is unset"
+   echo "set it to your local speech tools directory e.g."
+   echo '   bash$ export ESTDIR=/home/awb/projects/speech_tools/'
+   echo or
+   echo '   csh% setenv ESTDIR /home/awb/projects/speech_tools/'
+   exit 1
+fi
 
-FESTDIR=$(ESTDIR)/../festival
-
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
-
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
-
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
-
-
-
-
+for i in $*
+do
+   fname=`basename $i .lar`
+   echo $i PM
+   # Due to a bug this only works for 16Khz
+   $ESTDIR/bin/ch_wave $i -F 16000 -o tmp$$.lar
+   # You'll need -inv if you are at CMU (or CSTR and maybe elsewhere)
+   # Male
+   $ESTDIR/bin/pitchmark tmp$$.lar -inv -o pm/$fname.pm -otype est -min 0.005 -max 0.012 -fill -def 0.01 -wave_end
+   # Female
+#   $ESTDIR/bin/pitchmark tmp$$.lar -inv -o pm/$fname.pm -otype est -min 0.00333 -max 0.0075 -fill -def 0.006 -wave_end
+   rm -f tmp$$.lar
+done

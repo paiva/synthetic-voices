@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+#####################################################-*-mode:shell-script-*-
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -31,39 +32,45 @@
 ##                                                                       ##
 ###########################################################################
 ##                                                                       ##
-##    User defined configuration options                                 ##
+##  Generate xlabel format representation of EST pm files suitable       ##
+##  for view in University of Macquarie's emulabel or Entropic's Xwaves  ##
 ##                                                                       ##
 ###########################################################################
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
+if [ $# = 0 ]
+then
+   echo "Make pm labels for viewing in emulabel or similar"
+   echo "Usage:  bin/make_pmlab_pm pm/*.pm"
+   echo "Will create pm_lab/*.lab"
+   exit 1
+fi
 
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
+if [ `dirname $1` = "pm_lab" ]
+then
+   echo 
+   echo "ERROR"
+   echo "This function generates pmlab from pm files.  "
+   echo "you probably wanted to type "
+   echo "      bin/make_pmlab_pm pm/*.pm"
+   echo "not"
+   echo "      bin/make_pmlab_pm pm_lab/*.lab"
+   echo
+   exit
+fi
 
-FESTDIR=$(ESTDIR)/../festival
-
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
-
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
-
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
-
-
-
-
+for i in $* 
+do
+   echo $i
+   fname=`basename $i .pm`
+   awk '{if ($1 == "EST_Header_End")
+         {
+            post_header = 1;
+            printf("#\n");
+         }
+         else if (post_header == 1)
+         {
+	     printf("%f 125 %f\n",$1,$2);
+         }}' $i >pm_lab/$fname.lab
+done

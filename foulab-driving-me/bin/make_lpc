@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+#####################################################-*-mode:shell-script-*-
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -30,40 +31,67 @@
 ##  THIS SOFTWARE.                                                       ##
 ##                                                                       ##
 ###########################################################################
-##                                                                       ##
-##    User defined configuration options                                 ##
-##                                                                       ##
-###########################################################################
+###                                                                       ##
+###  Generate LPC coefficients and residual for diphones (or otherwise)   ##
+###                                                                       ##
+############################################################################
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
+if [ $# = 0 ]
+then
+   echo "Extract lpc coefficients and residuals"
+   echo "Usage:  bin/make_lpc etc/txt.done.data"
+   echo "Expects pm/*.pm to exist, and creates lpc/*.lpc and lpc/*.res"
+   echo "If etc/powfacts exists, waveform will be power normalized"
+   echo "for LPC and residual extraction, wav/*.wav will be unchanged though."
+   exit 1
+fi
 
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
+if [ ! "$ESTDIR" ]
+then
+   echo "environment variable ESTDIR is unset"
+   echo "set it to your local speech tools directory e.g."
+   echo '   bash$ export ESTDIR=/home/awb/projects/speech_tools/'
+   echo or
+   echo '   csh% setenv ESTDIR /home/awb/projects/speech_tools/'
+   exit 1
+fi
 
-FESTDIR=$(ESTDIR)/../festival
+PROMPTFILE=etc/txt.done.data
+if [ $# = 1 ]
+then
+   PROMPTFILE=$1
+fi
 
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
+awk '{print $2}' $PROMPTFILE |
+while read i
+do
+   fname=$i
+   echo $fname LPC
 
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
+   # Potentially normalise the power (if powfact is there)
+   if [ -f etc/powfacts ]
+   then
+       powfact=`awk '{if ($1 == "'$fname'") print $2}' etc/powfacts`
+       if [ ! "$powfact" ]
+       then
+           powfact=1.0
+       fi
+       $ESTDIR/bin/ch_wave -scale $powfact wav/$fname.wav -o /tmp/tmp$$.wav
+   else
+       cat wav/$fname.wav >/tmp/tmp$$.wav    
+   fi
+   # Change the overall volume too, of the normalised file
+   # $ESTDIR/bin/ch_wave -scaleN 0.65 -o /tmp/tmp$$.wav /tmp/tmp$$.wav
 
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
+   # and if you want to resample, now is the time (can be combine with above)
+   #$ESTDIR/bin/ch_wave -F 11025 -o /tmp/tmp$$.wav /tmp/tmp$$.wav
 
+   # Extract the LPC coefficients 
+  $ESTDIR/bin/sig2fv /tmp/tmp$$.wav -o lpc/$fname.lpc -otype est_binary -lpc_order 16 -coefs "lpc" -pm pm/$fname.pm -preemph 0.95 -factor 3 -window_type hamming
+   # Extract the residual
+   $ESTDIR/bin/sigfilter /tmp/tmp$$.wav -o lpc/$fname.res -otype riff -lpcfilter lpc/$fname.lpc -inv_filter
 
-
-
+   rm /tmp/tmp$$.wav
+done

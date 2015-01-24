@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+####################################################-*-mode:shell-script-*-
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -30,40 +31,32 @@
 ##  THIS SOFTWARE.                                                       ##
 ##                                                                       ##
 ###########################################################################
-##                                                                       ##
-##    User defined configuration options                                 ##
-##                                                                       ##
-###########################################################################
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
+if [ $# = 0 ]
+then
+   echo "Extract the F0 from the waveform files"
+   echo "Usage:  bin/make_f0 wav/*.wav"
+   echo "Will create F0 files in f0/*.f0"
+   exit 1
+fi
 
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
+if [ ! "$ESTDIR" ]
+then
+   echo "environment variable ESTDIR is unset"
+   echo "set it to your local speech tools directory e.g."
+   echo '   bash$ export ESTDIR=/home/awb/projects/speech_tools/'
+   echo or
+   echo '   csh% setenv ESTDIR /home/awb/projects/speech_tools/'
+   exit 1
+fi
 
-FESTDIR=$(ESTDIR)/../festival
-
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
-
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
-
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
-
-
+for i in $*
+do
+  fname=`basename $i .wav`
+  echo $fname F0
+  $ESTDIR/bin/pda -L -fmin 70 -fmax 240 -o f0/$fname.f0 -otype ssff $PDA_PARAMS wav/$fname.wav
+done
 
 

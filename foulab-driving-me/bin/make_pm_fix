@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+####################################################-*-mode:shell-script-*-
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -30,40 +31,40 @@
 ##  THIS SOFTWARE.                                                       ##
 ##                                                                       ##
 ###########################################################################
-##                                                                       ##
-##    User defined configuration options                                 ##
-##                                                                       ##
-###########################################################################
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
+if [ $# = 0 ]
+then
+   echo "Move pitch marks to nearest peak within window wrt wave files"
+   echo "Usage:  bin/make_pm_fix pm/*.pm"
+   echo "Will overwrite pm/*.pm files"
+   exit 1
+fi
 
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
+if [ ! "$FESTVOXDIR" ]
+then
+   echo "environment variable FESTVOXDIR is unset"
+   echo "set it to your local festvox directory e.g."
+   echo '   bash$ export FESTVOXDIR=/home/awb/projects/festvox/'
+   echo or
+   echo '   csh% setenv FESTVOXDIR /home/awb/projects/festvox/'
+   exit 1
+fi
 
-FESTDIR=$(ESTDIR)/../festival
+FIX_PM=$FESTVOXDIR/src/general/fix_pm
 
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
+PROMPTFILE=etc/txt.done.data
+if [ $# = 1 ]
+then
+   PROMPTFILE=$1
+fi
 
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
-
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
-
-
-
-
+awk '{print $2}' $PROMPTFILE |
+while read i
+do
+   fname=$i
+   echo $fname
+   $FIX_PM -wave wav/$fname.wav -pm pm/$fname.pm -window 32 -o $fname.pm  
+   mv $fname.pm pm/$fname.pm
+done

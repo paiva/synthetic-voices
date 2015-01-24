@@ -1,4 +1,5 @@
-########################################################-*-mode:Makefile-*-
+#!/bin/sh
+###########################################################################
 ##                                                                       ##
 ##                   Carnegie Mellon University and                      ##
 ##                   Alan W Black and Kevin A. Lenzo                     ##
@@ -30,40 +31,25 @@
 ##  THIS SOFTWARE.                                                       ##
 ##                                                                       ##
 ###########################################################################
-##                                                                       ##
-##    User defined configuration options                                 ##
-##                                                                       ##
-###########################################################################
+#
+#  splits train and test data
+#
 
-###########################################################################
-##  The location of your compiled speech_tools.                          ##
-##                                                                       ##
-##  Unless you have set LD_LIBRARY_PATH you'll find compiling the system ##
-##  not as SHARED easier                                                 ##
-###########################################################################
+LANG=C; export LANG
 
-ESTDIR=/home/s/Github/synthetic-voices/download/festvox
-
-###########################################################################
-##  The location of your compiled Festival (2.0)                         ##
-###########################################################################
-
-FESTDIR=$(ESTDIR)/../festival
-
-###########################################################################
-##  General flags (note something inherit their flags from EST directly  ##
-###########################################################################
-
-CC       = gcc
-CFLAGS   = -g -O2 -Wall
-CPPFLAGS = 
-SHFLAGS  = 
-NOPTHREADFLAGS  = 
-
-AR       = ar
-RANLIB   = ranlib
-INSTALL  = /usr/bin/install -c
-
-
-
-
+cat -n $1 |
+awk '{if ($1 ~ /.*9$/)
+      {
+       for (i=2; i<=NF; i++)
+          printf("%s ",$i);
+       printf("\n");
+      }
+     }' >$1.test
+cat -n $1 |
+awk '{if ($1 ~ /.*[^9]$/)
+      {
+       for (i=2; i<=NF; i++)
+          printf("%s ",$i);
+       printf("\n");
+      }
+     }' > $1.train

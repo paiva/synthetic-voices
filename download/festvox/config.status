@@ -502,7 +502,7 @@ cat >>"$tmp/subs1.awk" <<\_ACAWK &&
 S["LTLIBOBJS"]=""
 S["LIBOBJS"]=""
 S["NOPTHREADFLAGS"]=""
-S["ESTDIR"]="/home/s/Github/synthetic-voices/download/speech_tools"
+S["ESTDIR"]="/home/s/Github/synthetic-voices/download/festvox"
 S["SHFLAGS"]=""
 S["EGREP"]="/bin/grep -E"
 S["GREP"]="/bin/grep"
